@@ -1,5 +1,6 @@
 venv/
 .vscode/
 .env
+.idea/
 QuALITY.v.1.0.1/
 QuALITY.v.1.0.1.zip
