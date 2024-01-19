@@ -54,6 +54,20 @@ def parse_response(response) -> Optional[int]:
     return None
 
 
+load_dotenv()
+client = OpenAI(api_key=os.getenv("API_KEY"))
+
+
+def call_openai(prompt, max_tokens=5):
+    response = client.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=max_tokens,
+    )
+
+    return response.choices[0].message.content
+
+
 def call_openai(system_prompt, prompt, model, max_tokens=100, stop=None):
     stream = client.chat.completions.create(
         model="gpt-4",

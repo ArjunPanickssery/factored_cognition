@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 client = OpenAI(api_key=os.getenv("API_KEY"))
 
-def call_openai(prompt, max_tokens=10):
+
+def call_openai(prompt, max_tokens=100):
     response = client.chat.completions.create(
         model="gpt-4",
         messages=[{"role": "user", "content": prompt}],
@@ -17,10 +18,10 @@ def call_openai(prompt, max_tokens=10):
 
 def extract_topics(question):
     prompt = "Given the following question, list all topics that are relevant to answering it, including people, places, and things.\n\n"
-    prompt = "Do not respond with anything other than the topics themselves. List each topic on a new line.\n\n"
+    prompt = "Do not respond with anything other than the topics themselves. List the topics using bullet points and include nothing else.\n\n"
     prompt += f"Question: {question}\n"
     response = call_openai(prompt, max_tokens=100)
-    topics = response.split("\n")
+    # topics = response.split("\n")
     return topics
 
 
@@ -30,9 +31,21 @@ def construct_subprompt(notes, paragraph, topics):
         subprompt += f"{i}: {note}\n"
     subprompt += "\n"
     subprompt += f"Given the following paragraph, record a new note including any information that may be relevant to the following topics: {', '.join(topics)}\n"
-    subprompt += "Do not add any number to the beginning of your note.\n\n"
+    subprompt += "Do not add any number to the beginning of your note.\n"
+    subprompt += (
+        "If there is no information relevant to the topic, respond with N/A.\n\n"
+    )
     subprompt += f"Paragraph: {paragraph}\n"
     return subprompt
+
+
+def print_notes(notes):
+    output = ""
+    for i, note in enumerate(notes):
+        if note[:3] != "N/A":
+            output += f"{i}: {note}\n"
+
+    return output
 
 
 def construct_synthesis_prompt(notes, question, options):
@@ -52,13 +65,16 @@ def construct_synthesis_prompt(notes, question, options):
 def call_agent(article, question, options):
     topics = extract_topics(question)
 
+    print(topics)
+
     notes = []
-    paragraphs = article.split("\n")
+    paragraphs = article.split("\n\n")
 
     for paragraph in paragraphs:
         prompt = construct_subprompt(notes, paragraph, topics)
         response = call_openai(prompt)
         notes.append(response)
+        print(response)
 
     prompt = construct_synthesis_prompt(notes, question, options)
     response = call_openai(prompt)
